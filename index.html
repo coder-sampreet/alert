@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Serverless Alert Node App</title>
+  <title>Serverless Alert Node App with Location</title>
   <style>
     body {
       display: flex;
@@ -32,7 +32,7 @@
 
   <div>
     <button id="alertButton">Send Alert</button>
-    <div id="alertMessage">ALERT! Someone has pressed the button!</div>
+    <div id="alertMessage"></div> <!-- This will show the alert message with the location -->
   </div>
 
   <!-- Firebase SDKs -->
@@ -62,17 +62,42 @@
     const alertButton = document.getElementById('alertButton');
     const alertMessage = document.getElementById('alertMessage');
 
-    // Function to send an alert to Firestore
-    async function sendAlert() {
-      try {
-        await addDoc(collection(db, 'alerts'), {
-          sessionId: sessionId, // Add the session ID of the sender
-          timestamp: serverTimestamp()
-        });
-        console.log("Alert sent!");
-      } catch (e) {
-        console.error("Error sending alert: ", e);
+    // Function to get the current location (latitude and longitude)
+    function getLocation(callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            };
+            callback(location);
+          },
+          (error) => {
+            console.error("Error getting location: ", error);
+            callback(null); // Proceed without location if there's an error
+          }
+        );
+      } else {
+        console.error("Geolocation is not supported by this browser.");
+        callback(null); // Proceed without location if not supported
       }
+    }
+
+    // Function to send an alert to Firestore with location
+    async function sendAlert() {
+      getLocation(async (location) => {
+        try {
+          await addDoc(collection(db, 'alerts'), {
+            sessionId: sessionId, // Add the session ID of the sender
+            location: location ? location : { latitude: null, longitude: null }, // Add location or null if not available
+            timestamp: serverTimestamp()
+          });
+          console.log("Alert sent with location!", location);
+        } catch (e) {
+          console.error("Error sending alert: ", e);
+        }
+      });
     }
 
     // Real-time listener for alerts
@@ -82,7 +107,14 @@
         const data = doc.data();
         // Only show alert to other users, not the one who triggered it
         if (data.sessionId !== sessionId) {
+          const { latitude, longitude } = data.location || { latitude: "unknown", longitude: "unknown" };
+          const locationMessage = latitude && longitude
+            ? `Alert from node at location: Latitude ${latitude}, Longitude ${longitude}`
+            : `Alert received (location not available)`;
+
+          alertMessage.innerHTML = locationMessage;
           alertMessage.style.display = 'block';
+
           setTimeout(() => {
             alertMessage.style.display = 'none';
           }, 5000); // Hide alert message after 5 seconds
