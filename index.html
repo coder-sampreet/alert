@@ -56,6 +56,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Generate a unique session ID for the current user/node
+    const sessionId = Math.random().toString(36).substr(2, 9);
+
     const alertButton = document.getElementById('alertButton');
     const alertMessage = document.getElementById('alertMessage');
 
@@ -63,6 +66,7 @@
     async function sendAlert() {
       try {
         await addDoc(collection(db, 'alerts'), {
+          sessionId: sessionId, // Add the session ID of the sender
           timestamp: serverTimestamp()
         });
         console.log("Alert sent!");
@@ -75,10 +79,14 @@
     const alertsQuery = query(collection(db, 'alerts'), orderBy('timestamp', 'desc'), limit(1));
     onSnapshot(alertsQuery, (snapshot) => {
       snapshot.forEach((doc) => {
-        alertMessage.style.display = 'block';
-        setTimeout(() => {
-          alertMessage.style.display = 'none';
-        }, 5000); // Hide alert message after 5 seconds
+        const data = doc.data();
+        // Only show alert to other users, not the one who triggered it
+        if (data.sessionId !== sessionId) {
+          alertMessage.style.display = 'block';
+          setTimeout(() => {
+            alertMessage.style.display = 'none';
+          }, 5000); // Hide alert message after 5 seconds
+        }
       });
     });
 
