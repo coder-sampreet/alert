@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serverless Alert Node App</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    #alertButton {
+      padding: 20px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    #alertMessage {
+      margin-top: 20px;
+      font-size: 18px;
+      color: red;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <button id="alertButton">Send Alert</button>
+    <div id="alertMessage">ALERT! Someone has pressed the button!</div>
+  </div>
+
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+  <script>
+    // Your Firebase configuration (get this from the Firebase Console)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB4sq1de7zwsujnckjKEuOFfwBIjtYklq0",
+      authDomain: "alert-326d8.firebaseapp.com",
+      projectId: "alert-326d8",
+      storageBucket: "alert-326d8.appspot.com",
+      messagingSenderId: "956564451083",
+      appId: "1:956564451083:web:c48b289edffba5da417c0e"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const alertButton = document.getElementById('alertButton');
+    const alertMessage = document.getElementById('alertMessage');
+
+    function sendAlert() {
+      db.collection('alerts').add({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        console.log("Alert sent!");
+      });
+    }
+
+    db.collection('alerts')
+      .orderBy('timestamp', 'desc')
+      .limit(1)
+      .onSnapshot((snapshot) => {
+        snapshot.forEach((doc) => {
+          alertMessage.style.display = 'block';
+          setTimeout(() => {
+            alertMessage.style.display = 'none';
+          }, 5000); // Hide alert message after 5 seconds
+        });
+      });
+
+    alertButton.addEventListener('click', sendAlert);
+  </script>
+
+</body>
+</html>
