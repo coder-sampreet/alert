@@ -62,6 +62,9 @@
     const alertButton = document.getElementById('alertButton');
     const alertMessage = document.getElementById('alertMessage');
 
+    // Track the time when the page is loaded
+    const pageLoadTime = new Date();
+
     // Function to get the current location (latitude and longitude)
     function getLocation(callback) {
       if (navigator.geolocation) {
@@ -105,8 +108,10 @@
     onSnapshot(alertsQuery, (snapshot) => {
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // Only show alert to other users, not the one who triggered it
-        if (data.sessionId !== sessionId) {
+        const alertTimestamp = new Date(data.timestamp.toDate());
+
+        // Only show alert to other users and if the alert is sent after page load
+        if (data.sessionId !== sessionId && alertTimestamp > pageLoadTime) {
           const { latitude, longitude } = data.location || { latitude: "unknown", longitude: "unknown" };
           const locationMessage = latitude && longitude
             ? `Alert from node at location: Latitude ${latitude}, Longitude ${longitude}`
