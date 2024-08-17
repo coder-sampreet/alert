@@ -35,47 +35,54 @@
     <div id="alertMessage">ALERT! Someone has pressed the button!</div>
   </div>
 
-  <!-- Firebase App (the core Firebase SDK) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Import the necessary Firebase SDK functions
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-  <script>
-    // Your Firebase configuration (get this from the Firebase Console)
+    // Your Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyB4sq1de7zwsujnckjKEuOFfwBIjtYklq0",
       authDomain: "alert-326d8.firebaseapp.com",
       projectId: "alert-326d8",
       storageBucket: "alert-326d8.appspot.com",
       messagingSenderId: "956564451083",
-      appId: "1:956564451083:web:c48b289edffba5da417c0e"
+      appId: "1:956564451083:web:c48b289edffba5da417c0e",
+      measurementId: "G-VZ9275FTBT"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     const alertButton = document.getElementById('alertButton');
     const alertMessage = document.getElementById('alertMessage');
 
-    function sendAlert() {
-      db.collection('alerts').add({
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
+    // Function to send an alert to Firestore
+    async function sendAlert() {
+      try {
+        await addDoc(collection(db, 'alerts'), {
+          timestamp: serverTimestamp()
+        });
         console.log("Alert sent!");
-      });
+      } catch (e) {
+        console.error("Error sending alert: ", e);
+      }
     }
 
-    db.collection('alerts')
-      .orderBy('timestamp', 'desc')
-      .limit(1)
-      .onSnapshot((snapshot) => {
-        snapshot.forEach((doc) => {
-          alertMessage.style.display = 'block';
-          setTimeout(() => {
-            alertMessage.style.display = 'none';
-          }, 5000); // Hide alert message after 5 seconds
-        });
+    // Real-time listener for alerts
+    const alertsQuery = query(collection(db, 'alerts'), orderBy('timestamp', 'desc'), limit(1));
+    onSnapshot(alertsQuery, (snapshot) => {
+      snapshot.forEach((doc) => {
+        alertMessage.style.display = 'block';
+        setTimeout(() => {
+          alertMessage.style.display = 'none';
+        }, 5000); // Hide alert message after 5 seconds
       });
+    });
 
+    // Event listener for the alert button
     alertButton.addEventListener('click', sendAlert);
   </script>
 
