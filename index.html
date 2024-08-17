@@ -113,8 +113,14 @@
         // Only show alert to other users and if the alert is sent after page load
         if (data.sessionId !== sessionId && alertTimestamp > pageLoadTime) {
           const { latitude, longitude } = data.location || { latitude: "unknown", longitude: "unknown" };
-          const locationMessage = latitude && longitude
-            ? `Alert from node at location: Latitude ${latitude}, Longitude ${longitude}`
+          
+          // Construct Google Maps URL
+          const googleMapsUrl = latitude && longitude 
+            ? `https://www.google.com/maps?q=${latitude},${longitude}` 
+            : null;
+          
+          const locationMessage = googleMapsUrl
+            ? `Alert from node at location: <a href="${googleMapsUrl}" target="_blank">Open in Google Maps</a>`
             : `Alert received (location not available)`;
 
           alertMessage.innerHTML = locationMessage;
